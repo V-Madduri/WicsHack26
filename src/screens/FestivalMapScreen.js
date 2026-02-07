@@ -1,55 +1,72 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { 
   View, 
   Text, 
   StyleSheet, 
   SafeAreaView,
-  ScrollView,
-  TouchableOpacity
+  ScrollView, 
+  TouchableOpacity,
+  Platform,
+  Animated,
+  ImageBackground
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
-export default function FestivalMapScreen() {
-  const stages = [
+export default function FestivalExploreScreen() {
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, { toValue: 1.1, duration: 2000, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 1, duration: 2000, useNativeDriver: true }),
+      ])
+    ).start();
+  }, [pulseAnim]);
+
+  const festivals = [
     {
       id: '1',
-      name: 'Main Stage',
-      vibe: 'HYPE',
-      color: '#FF4500',
-      crowd: 92,
+      name: 'Aura Fest 2026',
+      date: 'AUG 12-14',
+      location: 'BROOKLYN MIRAGE',
+      tag: 'HOTTEST',
+      color: '#F28482',
     },
     {
       id: '2',
-      name: 'Tito\'s Stage',
-      vibe: 'CHILLED',
-      color: '#87CEEB',
-      crowd: 67,
+      name: 'Electric Sky',
+      date: 'SEP 05-07',
+      location: 'ZILKER PARK',
+      tag: 'TRENDING',
+      color: '#84A59D',
     },
     {
       id: '3',
-      name: 'Honda Stage',
-      vibe: 'EUPHORIC',
-      color: '#FF69B4',
-      crowd: 85,
+      name: 'Neon Garden',
+      date: 'OCT 21-23',
+      location: 'ECHO PARK',
+      tag: 'CHILL VIBES',
+      color: '#9B86BD',
     },
   ];
 
   return (
     <SafeAreaView style={styles.container}>
-      <LinearGradient
-        colors={['#FFE5F0', '#F0E5FF', '#E5F0FF']}
-        style={styles.gradient}
-      >
+      <LinearGradient colors={['#FCE4EC', '#E3F2FD']} style={styles.gradient}>
+        
+        {/* Header matching Pin Screen Style */}
         <View style={styles.header}>
-          <View>
-            <Text style={styles.networkText}>SONIC SCOUT</Text>
-            <Text style={styles.socialText}>Fest</Text>
+          <View style={styles.headerTitleRow}>
+            <View>
+              <Text style={styles.networkText}>DISCOVER</Text>
+              <Text style={styles.socialText}>Festivals</Text>
+            </View>
+            <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+              <MaterialCommunityIcons name="sparkles" size={30} color="#F28482" />
+            </Animated.View>
           </View>
-          <TouchableOpacity style={styles.liveButton}>
-            <View style={styles.liveDot} />
-            <Text style={styles.liveText}>LIVE</Text>
-          </TouchableOpacity>
         </View>
 
         <ScrollView 
@@ -57,46 +74,49 @@ export default function FestivalMapScreen() {
           contentContainerStyle={styles.scrollContent}
         >
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>FESTIVAL VIBES</Text>
-            <Text style={styles.subtitle}>Real-time sentiment from the crowd</Text>
-
-            {stages.map((stage) => (
-              <TouchableOpacity key={stage.id} style={styles.stageCard}>
-                <View style={styles.stageHeader}>
-                  <View>
-                    <Text style={styles.stageName}>{stage.name}</Text>
-                    <View style={styles.vibeRow}>
-                      <View style={[styles.vibeIndicator, { backgroundColor: stage.color }]} />
-                      <Text style={styles.vibeText}>{stage.vibe}</Text>
+            {festivals.map((fest) => (
+              <View key={fest.id} style={styles.festCard}>
+                {/* Image Placeholder Area */}
+                <View style={[styles.imageContainer, { backgroundColor: fest.color + '20' }]}>
+                  <LinearGradient 
+                    colors={['transparent', 'rgba(0,0,0,0.4)']} 
+                    style={styles.imageOverlay} 
+                  />
+                  <TouchableOpacity style={styles.heartButton}>
+                    <Ionicons name="heart-outline" size={22} color="#FFF" />
+                  </TouchableOpacity>
+                  
+                  <View style={styles.cardContent}>
+                    <View style={styles.tagBadge}>
+                      <Text style={styles.tagText}>{fest.tag}</Text>
+                    </View>
+                    <Text style={styles.festTitle}>{fest.name}</Text>
+                    
+                    <View style={styles.infoRow}>
+                      <View style={styles.infoItem}>
+                        <Ionicons name="calendar-outline" size={14} color="#FFF" />
+                        <Text style={styles.infoText}>{fest.date}</Text>
+                      </View>
+                      <View style={styles.infoItem}>
+                        <Ionicons name="location-outline" size={14} color="#FFF" />
+                        <Text style={styles.infoText}>{fest.location}</Text>
+                      </View>
                     </View>
                   </View>
-                  <Ionicons name="musical-notes" size={32} color={stage.color} />
                 </View>
 
-                <View style={styles.crowdMeter}>
-                  <Text style={styles.crowdLabel}>CROWD ENERGY</Text>
-                  <View style={styles.meterContainer}>
-                    <View style={[styles.meterFill, { width: `${stage.crowd}%`, backgroundColor: stage.color }]} />
-                  </View>
-                  <Text style={styles.crowdPercent}>{stage.crowd}%</Text>
+                {/* Bottom Action Buttons */}
+                <View style={styles.actionRow}>
+                  <TouchableOpacity style={styles.detailsBtn}>
+                    <Text style={styles.detailsBtnText}>DETAILS</Text>
+                  </TouchableOpacity>
+                  <View style={styles.divider} />
+                  <TouchableOpacity style={styles.ticketsBtn}>
+                    <Text style={[styles.ticketsBtnText, { color: fest.color }]}>TICKETS</Text>
+                  </TouchableOpacity>
                 </View>
-              </TouchableOpacity>
+              </View>
             ))}
-          </View>
-
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>VIBE MATCH</Text>
-            <Text style={styles.subtitle}>Find others feeling your energy</Text>
-
-            <View style={styles.vibeMatchCard}>
-              <Ionicons name="people" size={48} color="#FF69B4" />
-              <Text style={styles.vibeMatchText}>
-                23 people near Main Stage are feeling HYPE right now
-              </Text>
-              <TouchableOpacity style={styles.connectButton}>
-                <Text style={styles.connectText}>CONNECT</Text>
-              </TouchableOpacity>
-            </View>
           </View>
         </ScrollView>
       </LinearGradient>
@@ -105,175 +125,75 @@ export default function FestivalMapScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFE5F0',
-  },
-  gradient: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    paddingHorizontal: 24,
-    paddingTop: 20,
-    paddingBottom: 10,
-  },
-  networkText: {
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 2.5,
-    color: '#000',
-  },
+  container: { flex: 1, backgroundColor: '#FCE4EC' },
+  gradient: { flex: 1 },
+  header: { paddingHorizontal: 30, paddingTop: 30, paddingBottom: 15 },
+  headerTitleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
+  networkText: { fontSize: 10, fontWeight: '800', letterSpacing: 4, color: '#A08189' },
   socialText: {
-    fontSize: 52,
-    fontWeight: '300',
-    fontStyle: 'italic',
-    color: '#000',
+    fontSize: 62,
+    fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif',
+    color: '#3D3D3D',
     marginTop: -10,
+    fontStyle: 'italic'
   },
-  liveButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  scrollContent: { paddingBottom: 100 },
+  section: { paddingHorizontal: 25 },
+  festCard: {
     backgroundColor: '#FFF',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  liveDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#FF4500',
-    marginRight: 8,
-  },
-  liveText: {
-    fontSize: 12,
-    fontWeight: '800',
-    letterSpacing: 1.5,
-    color: '#000',
-  },
-  scrollContent: {
-    paddingBottom: 120,
-  },
-  section: {
-    paddingHorizontal: 24,
-    marginBottom: 35,
-  },
-  sectionTitle: {
-    fontSize: 13,
-    fontWeight: '800',
-    letterSpacing: 2.5,
-    color: '#000',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 20,
-    fontWeight: '500',
-  },
-  stageCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-    borderRadius: 24,
-    padding: 20,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  stageHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 20,
-  },
-  stageName: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#000',
-    marginBottom: 8,
-  },
-  vibeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  vibeIndicator: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginRight: 8,
-  },
-  vibeText: {
-    fontSize: 13,
-    fontWeight: '700',
-    letterSpacing: 1.5,
-    color: '#000',
-  },
-  crowdMeter: {
-    marginTop: 8,
-  },
-  crowdLabel: {
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 2,
-    color: '#666',
-    marginBottom: 8,
-  },
-  meterContainer: {
-    height: 8,
-    backgroundColor: '#E0E0E0',
-    borderRadius: 4,
+    borderRadius: 30,
+    marginBottom: 25,
     overflow: 'hidden',
-    marginBottom: 6,
-  },
-  meterFill: {
-    height: '100%',
-    borderRadius: 4,
-  },
-  crowdPercent: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#000',
-    textAlign: 'right',
-  },
-  vibeMatchCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-    borderRadius: 24,
-    padding: 24,
-    alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 15,
+    elevation: 5,
   },
-  vibeMatchText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#000',
-    textAlign: 'center',
-    marginTop: 16,
-    marginBottom: 20,
+  imageContainer: {
+    height: 220,
+    justifyContent: 'flex-end',
+    position: 'relative',
   },
-  connectButton: {
-    backgroundColor: '#FF69B4',
-    paddingHorizontal: 32,
-    paddingVertical: 14,
-    borderRadius: 24,
+  imageOverlay: { ...StyleSheet.absoluteFillObject },
+  heartButton: {
+    position: 'absolute',
+    top: 20,
+    right: 20,
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    padding: 8,
+    borderRadius: 20,
   },
-  connectText: {
-    fontSize: 13,
-    fontWeight: '800',
-    letterSpacing: 2,
+  cardContent: { padding: 20 },
+  tagBadge: {
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 5,
+    marginBottom: 8,
+  },
+  tagText: { color: '#FFF', fontSize: 10, fontWeight: '900', letterSpacing: 1 },
+  festTitle: {
     color: '#FFF',
+    fontSize: 32,
+    fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif',
+    fontStyle: 'italic',
+    marginBottom: 10,
   },
+  infoRow: { flexDirection: 'row', gap: 15 },
+  infoItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  infoText: { color: '#FFF', fontSize: 11, fontWeight: '700', letterSpacing: 0.5 },
+  actionRow: {
+    flexDirection: 'row',
+    height: 60,
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: '#F5F5F5',
+  },
+  detailsBtn: { flex: 1, alignItems: 'center' },
+  detailsBtnText: { fontSize: 12, fontWeight: '800', letterSpacing: 1.5, color: '#3D3D3D' },
+  divider: { width: 1, height: '50%', backgroundColor: '#EEE' },
+  ticketsBtn: { flex: 1, alignItems: 'center' },
+  ticketsBtnText: { fontSize: 12, fontWeight: '800', letterSpacing: 1.5 },
 });
