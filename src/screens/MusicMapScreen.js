@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   View, 
   Text, 
@@ -6,35 +6,128 @@ import {
   SafeAreaView,
   ScrollView,
   TouchableOpacity,
-  Image
+  Image,
+  Animated,
+  StatusBar,
+  Platform,
+  Modal,
+  TextInput,
+  KeyboardAvoidingView
 } from 'react-native';
+import MapView, { Marker } from 'react-native-maps';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { useFonts, PlayfairDisplay_400Regular_Italic } from '@expo-google-fonts/playfair-display';
 
 export default function MusicMapScreen() {
+  const [fontsLoaded] = useFonts({
+    PlayfairDisplay_400Regular_Italic,
+  });
+
+  const mapRef = useRef(null);
+  const [selectedPin, setSelectedPin] = useState(null);
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [showSearchModal, setShowSearchModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentRegion, setCurrentRegion] = useState({
+    latitude: 30.2672,
+    longitude: -97.7431,
+    latitudeDelta: 0.05,
+    longitudeDelta: 0.05,
+  });
+
   const [pins] = useState([
     {
       id: '1',
       song: 'Tame Impala',
+      artist: 'Tame Impala',
       location: 'PCL Library',
       sentiment: 'nostalgic',
       image: 'https://i.pravatar.cc/150?img=8',
+      memory: 'Late night studying for finals. This song kept me going through the hardest semester.',
+      date: 'December 15, 2023',
+      time: '11:47 PM',
+      coordinate: {
+        latitude: 30.2862,
+        longitude: -97.7394,
+      },
     },
     {
       id: '2',
-      song: 'Glass Animals',
+      song: 'Heat Waves',
+      artist: 'Glass Animals',
       location: 'Zilker Park',
       sentiment: 'euphoric',
       image: 'https://i.pravatar.cc/150?img=20',
+      memory: 'ACL Fest with my best friends. The sunset during this song was unforgettable.',
+      date: 'October 8, 2023',
+      time: '6:23 PM',
+      coordinate: {
+        latitude: 30.2672,
+        longitude: -97.7731,
+      },
     },
     {
       id: '3',
-      song: 'Khruangbin',
+      song: 'Time (You and I)',
+      artist: 'Khruangbin',
       location: 'Barton Springs',
       sentiment: 'chilled',
       image: 'https://i.pravatar.cc/150?img=15',
+      memory: 'Swimming at sunset. The water was perfect and everything felt right in the world.',
+      date: 'August 22, 2023',
+      time: '7:15 PM',
+      coordinate: {
+        latitude: 30.2635,
+        longitude: -97.7712,
+      },
     },
   ]);
+
+  // Multiple opacity animations for gradient crossfade
+  const opacity1 = useRef(new Animated.Value(1)).current;
+  const opacity2 = useRef(new Animated.Value(0)).current;
+  const opacity3 = useRef(new Animated.Value(0)).current;
+  const opacity4 = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (!fontsLoaded) return;
+
+    const animate = () => {
+      Animated.sequence([
+        Animated.parallel([
+          Animated.timing(opacity1, { toValue: 1, duration: 1500, useNativeDriver: true }),
+          Animated.timing(opacity2, { toValue: 0, duration: 1500, useNativeDriver: true }),
+          Animated.timing(opacity3, { toValue: 0, duration: 1500, useNativeDriver: true }),
+          Animated.timing(opacity4, { toValue: 0, duration: 1500, useNativeDriver: true }),
+        ]),
+        Animated.delay(4000),
+        Animated.parallel([
+          Animated.timing(opacity1, { toValue: 0, duration: 1500, useNativeDriver: true }),
+          Animated.timing(opacity2, { toValue: 1, duration: 1500, useNativeDriver: true }),
+          Animated.timing(opacity3, { toValue: 0, duration: 1500, useNativeDriver: true }),
+          Animated.timing(opacity4, { toValue: 0, duration: 1500, useNativeDriver: true }),
+        ]),
+        Animated.delay(4000),
+        Animated.parallel([
+          Animated.timing(opacity1, { toValue: 0, duration: 1500, useNativeDriver: true }),
+          Animated.timing(opacity2, { toValue: 0, duration: 1500, useNativeDriver: true }),
+          Animated.timing(opacity3, { toValue: 1, duration: 1500, useNativeDriver: true }),
+          Animated.timing(opacity4, { toValue: 0, duration: 1500, useNativeDriver: true }),
+        ]),
+        Animated.delay(4000),
+        Animated.parallel([
+          Animated.timing(opacity1, { toValue: 0, duration: 1500, useNativeDriver: true }),
+          Animated.timing(opacity2, { toValue: 0, duration: 1500, useNativeDriver: true }),
+          Animated.timing(opacity3, { toValue: 0, duration: 1500, useNativeDriver: true }),
+          Animated.timing(opacity4, { toValue: 1, duration: 1500, useNativeDriver: true }),
+        ]),
+        Animated.delay(4000),
+      ]).start(() => animate());
+    };
+
+    animate();
+  }, [fontsLoaded]);
 
   const getSentimentColor = (sentiment) => {
     const colors = {
@@ -46,18 +139,117 @@ export default function MusicMapScreen() {
     return colors[sentiment] || '#808080';
   };
 
+  const handleMarkerPress = (pin) => {
+    setSelectedPin(pin);
+    setShowPinModal(true);
+  };
+
+  const handleZoomIn = () => {
+    const newRegion = {
+      ...currentRegion,
+      latitudeDelta: currentRegion.latitudeDelta / 2,
+      longitudeDelta: currentRegion.longitudeDelta / 2,
+    };
+    setCurrentRegion(newRegion);
+    mapRef.current?.animateToRegion(newRegion, 300);
+  };
+
+  const handleZoomOut = () => {
+    const newRegion = {
+      ...currentRegion,
+      latitudeDelta: currentRegion.latitudeDelta * 2,
+      longitudeDelta: currentRegion.longitudeDelta * 2,
+    };
+    setCurrentRegion(newRegion);
+    mapRef.current?.animateToRegion(newRegion, 300);
+  };
+
+  const handleRegionChangeComplete = (region) => {
+    setCurrentRegion(region);
+  };
+
+  const handleSearchPress = () => {
+    setShowSearchModal(true);
+  };
+
+  const handleCloseSearch = () => {
+    setShowSearchModal(false);
+    setSearchQuery('');
+  };
+
+  const handleSearchResultPress = (pin) => {
+    setShowSearchModal(false);
+    setSearchQuery('');
+    setSelectedPin(pin);
+    setShowPinModal(true);
+  };
+
+  // Filter pins based on search query
+  const filteredPins = pins.filter((pin) => {
+    if (!searchQuery.trim()) return true;
+    
+    const query = searchQuery.toLowerCase();
+    const songMatch = pin.song.toLowerCase().includes(query);
+    const artistMatch = pin.artist.toLowerCase().includes(query);
+    const locationMatch = pin.location.toLowerCase().includes(query);
+    
+    return songMatch || artistMatch || locationMatch;
+  });
+
+  if (!fontsLoaded) {
+    return null;
+  }
+
   return (
-    <SafeAreaView style={styles.container}>
-      <LinearGradient
-        colors={['#E5F0FF', '#FFE5F0', '#F0FFE5']}
-        style={styles.gradient}
-      >
+    <View style={styles.fullScreen}>
+      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
+      
+      {/* Animated gradients */}
+      <View style={StyleSheet.absoluteFillObject}>
+        <Animated.View style={[StyleSheet.absoluteFillObject, { opacity: opacity1 }]}>
+          <LinearGradient
+            colors={['#E8F4FF', '#FFEEF7', '#FFF9E8']}
+            style={StyleSheet.absoluteFillObject}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0, y: 1 }}
+          />
+        </Animated.View>
+
+        <Animated.View style={[StyleSheet.absoluteFillObject, { opacity: opacity2 }]}>
+          <LinearGradient
+            colors={['#FFE8F7', '#FFF4E8', '#FFFDE8']}
+            style={StyleSheet.absoluteFillObject}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0, y: 1 }}
+          />
+        </Animated.View>
+
+        <Animated.View style={[StyleSheet.absoluteFillObject, { opacity: opacity3 }]}>
+          <LinearGradient
+            colors={['#FFF4E8', '#FFFDE8', '#FFFFE8']}
+            style={StyleSheet.absoluteFillObject}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0, y: 1 }}
+          />
+        </Animated.View>
+
+        <Animated.View style={[StyleSheet.absoluteFillObject, { opacity: opacity4 }]}>
+          <LinearGradient
+            colors={['#FFFDE8', '#F4E8FF', '#E8F4FF']}
+            style={StyleSheet.absoluteFillObject}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0, y: 1 }}
+          />
+        </Animated.View>
+      </View>
+
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
         <View style={styles.header}>
           <View>
             <Text style={styles.networkText}>SONIC SCOUT</Text>
-            <Text style={styles.socialText}>Explore</Text>
+            <Text style={styles.exploreText}>Explore</Text>
           </View>
-          <TouchableOpacity style={styles.searchButton}>
+          <TouchableOpacity style={styles.searchButton} onPress={handleSearchPress}>
             <Ionicons name="search" size={22} color="#000" />
           </TouchableOpacity>
         </View>
@@ -72,8 +264,51 @@ export default function MusicMapScreen() {
               {pins.length} musical memories pinned
             </Text>
 
+            {/* INTERACTIVE MAP WITH ZOOM CONTROLS */}
+            <View style={styles.mapContainer}>
+              <MapView
+                ref={mapRef}
+                style={styles.map}
+                initialRegion={currentRegion}
+                onRegionChangeComplete={handleRegionChangeComplete}
+                zoomEnabled={true}
+                scrollEnabled={true}
+                pitchEnabled={false}
+                rotateEnabled={false}
+              >
+                {pins.map((pin) => (
+                  <Marker
+                    key={pin.id}
+                    coordinate={pin.coordinate}
+                    onPress={() => handleMarkerPress(pin)}
+                  >
+                    <View style={styles.customMarker}>
+                      <View style={[styles.markerDot, { backgroundColor: getSentimentColor(pin.sentiment) }]}>
+                        <Ionicons name="musical-note" size={16} color="#FFF" />
+                      </View>
+                    </View>
+                  </Marker>
+                ))}
+              </MapView>
+
+              {/* Zoom Controls */}
+              <View style={styles.zoomControls}>
+                <TouchableOpacity style={styles.zoomButton} onPress={handleZoomIn}>
+                  <Ionicons name="add" size={24} color="#000" />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.zoomButton} onPress={handleZoomOut}>
+                  <Ionicons name="remove" size={24} color="#000" />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* PIN LIST */}
             {pins.map((pin) => (
-              <TouchableOpacity key={pin.id} style={styles.pinCard}>
+              <TouchableOpacity 
+                key={pin.id} 
+                style={styles.pinCard}
+                onPress={() => handleMarkerPress(pin)}
+              >
                 <View style={[styles.sentimentBar, { backgroundColor: getSentimentColor(pin.sentiment) }]} />
                 <View style={styles.pinContent}>
                   <Image 
@@ -113,17 +348,184 @@ export default function MusicMapScreen() {
             </View>
           </View>
         </ScrollView>
-      </LinearGradient>
-    </SafeAreaView>
+      </SafeAreaView>
+
+      {/* Search Modal */}
+      <Modal
+        visible={showSearchModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={handleCloseSearch}
+      >
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.searchModalOverlay}
+        >
+          <TouchableOpacity 
+            style={styles.searchBackdrop}
+            activeOpacity={1}
+            onPress={handleCloseSearch}
+          />
+          
+          <View style={styles.searchModalContent}>
+            <View style={styles.searchHeader}>
+              <Text style={styles.searchTitle}>Search Memories</Text>
+              <TouchableOpacity 
+                onPress={handleCloseSearch}
+                style={styles.closeButton}
+              >
+                <Ionicons name="close" size={28} color="#000" />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.searchInputContainer}>
+              <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search by song, artist, or location..."
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                placeholderTextColor="#999"
+                autoFocus={true}
+              />
+              {searchQuery.length > 0 && (
+                <TouchableOpacity onPress={() => setSearchQuery('')}>
+                  <Ionicons name="close-circle" size={20} color="#999" />
+                </TouchableOpacity>
+              )}
+            </View>
+
+            <ScrollView style={styles.searchResults} showsVerticalScrollIndicator={false}>
+              {filteredPins.length > 0 ? (
+                <>
+                  <Text style={styles.resultsCount}>
+                    {filteredPins.length} {filteredPins.length === 1 ? 'memory' : 'memories'} found
+                  </Text>
+                  {filteredPins.map((pin) => (
+                    <TouchableOpacity 
+                      key={pin.id} 
+                      style={styles.searchResultCard}
+                      onPress={() => handleSearchResultPress(pin)}
+                    >
+                      <View style={[styles.resultSentimentBar, { backgroundColor: getSentimentColor(pin.sentiment) }]} />
+                      <View style={styles.resultContent}>
+                        <Image 
+                          source={{ uri: pin.image }} 
+                          style={styles.resultImage}
+                        />
+                        <View style={styles.resultInfo}>
+                          <Text style={styles.resultSongName}>{pin.song}</Text>
+                          <Text style={styles.resultArtist}>{pin.artist}</Text>
+                          <View style={styles.resultLocationRow}>
+                            <Ionicons name="location" size={12} color="#666" />
+                            <Text style={styles.resultLocation}>{pin.location}</Text>
+                          </View>
+                          <Text style={styles.resultDate}>{pin.date}</Text>
+                        </View>
+                        <Ionicons name="chevron-forward" size={20} color="#999" />
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+                </>
+              ) : (
+                <View style={styles.noResults}>
+                  <Ionicons name="search" size={64} color="#CCC" />
+                  <Text style={styles.noResultsText}>No memories found</Text>
+                  <Text style={styles.noResultsSubtext}>
+                    Try searching for a different song, artist, or location
+                  </Text>
+                </View>
+              )}
+            </ScrollView>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* Pin Detail Modal */}
+      <Modal
+        visible={showPinModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowPinModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <TouchableOpacity 
+            style={styles.modalBackdrop}
+            activeOpacity={1}
+            onPress={() => setShowPinModal(false)}
+          />
+          
+          {selectedPin && (
+            <View style={styles.pinModalContent}>
+              <View style={[styles.modalSentimentBar, { backgroundColor: getSentimentColor(selectedPin.sentiment) }]} />
+              
+              <View style={styles.modalHeader}>
+                <Image 
+                  source={{ uri: selectedPin.image }} 
+                  style={styles.modalImage}
+                />
+                <TouchableOpacity 
+                  onPress={() => setShowPinModal(false)}
+                  style={styles.closeButton}
+                >
+                  <Ionicons name="close" size={28} color="#000" />
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.modalBody}>
+                <Text style={styles.modalSongName}>{selectedPin.song}</Text>
+                <Text style={styles.modalArtist}>{selectedPin.artist}</Text>
+
+                <View style={styles.modalInfoRow}>
+                  <Ionicons name="location" size={18} color="#666" />
+                  <Text style={styles.modalLocation}>{selectedPin.location}</Text>
+                </View>
+
+                <View style={styles.modalInfoRow}>
+                  <Ionicons name="calendar" size={18} color="#666" />
+                  <Text style={styles.modalDate}>{selectedPin.date}</Text>
+                </View>
+
+                <View style={styles.modalInfoRow}>
+                  <Ionicons name="time" size={18} color="#666" />
+                  <Text style={styles.modalTime}>{selectedPin.time}</Text>
+                </View>
+
+                <View style={styles.modalSentimentBadge}>
+                  <View style={[styles.sentimentBadgeDot, { backgroundColor: getSentimentColor(selectedPin.sentiment) }]} />
+                  <Text style={styles.sentimentBadgeText}>{selectedPin.sentiment.toUpperCase()}</Text>
+                </View>
+
+                <View style={styles.memorySection}>
+                  <Text style={styles.memoryLabel}>MEMORY</Text>
+                  <Text style={styles.memoryText}>{selectedPin.memory}</Text>
+                </View>
+
+                <TouchableOpacity style={styles.playButton}>
+                  <LinearGradient
+                    colors={[getSentimentColor(selectedPin.sentiment), '#C9A0FF']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.playGradient}
+                  >
+                    <Ionicons name="play" size={20} color="#FFF" />
+                    <Text style={styles.playText}>PLAY PREVIEW</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+        </View>
+      </Modal>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  fullScreen: {
     flex: 1,
-    backgroundColor: '#E5F0FF',
   },
-  gradient: {
+  safeArea: {
     flex: 1,
   },
   header: {
@@ -131,7 +533,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     paddingHorizontal: 24,
-    paddingTop: 20,
+    paddingTop: 10,
     paddingBottom: 10,
   },
   networkText: {
@@ -140,10 +542,9 @@ const styles = StyleSheet.create({
     letterSpacing: 2.5,
     color: '#000',
   },
-  socialText: {
+  exploreText: {
     fontSize: 52,
-    fontWeight: '300',
-    fontStyle: 'italic',
+    fontFamily: 'PlayfairDisplay_400Regular_Italic',
     color: '#000',
     marginTop: -10,
   },
@@ -179,6 +580,57 @@ const styles = StyleSheet.create({
     color: '#666',
     marginBottom: 20,
     fontWeight: '500',
+  },
+  mapContainer: {
+    height: 300,
+    borderRadius: 20,
+    overflow: 'hidden',
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+    position: 'relative',
+  },
+  map: {
+    flex: 1,
+  },
+  customMarker: {
+    alignItems: 'center',
+  },
+  markerDot: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: '#FFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  zoomControls: {
+    position: 'absolute',
+    right: 10,
+    bottom: 10,
+    gap: 10,
+  },
+  zoomButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#FFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
   },
   pinCard: {
     backgroundColor: 'rgba(255, 255, 255, 0.8)',
@@ -248,5 +700,285 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     color: '#000',
+  },
+  // Search Modal Styles
+  searchModalOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  searchBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  searchModalContent: {
+    backgroundColor: '#FFF',
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    height: '90%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 10,
+  },
+  searchHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 16,
+  },
+  searchTitle: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#000',
+  },
+  closeButton: {
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  searchInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8F8F8',
+    borderRadius: 16,
+    marginHorizontal: 24,
+    marginBottom: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  searchIcon: {
+    marginRight: 10,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    color: '#000',
+  },
+  searchResults: {
+    flex: 1,
+    paddingHorizontal: 24,
+  },
+  resultsCount: {
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 1.5,
+    color: '#666',
+    marginBottom: 16,
+  },
+  searchResultCard: {
+    backgroundColor: '#FFF',
+    borderRadius: 20,
+    marginBottom: 16,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
+  },
+  resultSentimentBar: {
+    height: 4,
+    width: '100%',
+  },
+  resultContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+  },
+  resultImage: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    marginRight: 16,
+  },
+  resultInfo: {
+    flex: 1,
+  },
+  resultSongName: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#000',
+    marginBottom: 2,
+  },
+  resultArtist: {
+    fontSize: 14,
+    color: '#666',
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  resultLocationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 2,
+  },
+  resultLocation: {
+    fontSize: 12,
+    color: '#666',
+    marginLeft: 4,
+  },
+  resultDate: {
+    fontSize: 12,
+    color: '#999',
+    marginTop: 2,
+  },
+  noResults: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+  },
+  noResultsText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#666',
+    marginTop: 16,
+  },
+  noResultsSubtext: {
+    fontSize: 14,
+    color: '#999',
+    marginTop: 8,
+    textAlign: 'center',
+    paddingHorizontal: 40,
+  },
+  // Pin Detail Modal Styles
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  modalBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  pinModalContent: {
+    backgroundColor: '#FFF',
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    maxHeight: '85%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 10,
+    overflow: 'hidden',
+  },
+  modalSentimentBar: {
+    height: 6,
+    width: '100%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingTop: 20,
+  },
+  modalImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+  },
+  modalBody: {
+    paddingHorizontal: 24,
+    paddingBottom: Platform.OS === 'ios' ? 40 : 20,
+  },
+  modalSongName: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#000',
+    marginTop: 20,
+    marginBottom: 4,
+  },
+  modalArtist: {
+    fontSize: 16,
+    color: '#666',
+    fontWeight: '600',
+    marginBottom: 20,
+  },
+  modalInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  modalLocation: {
+    fontSize: 16,
+    color: '#333',
+    marginLeft: 10,
+    fontWeight: '500',
+  },
+  modalDate: {
+    fontSize: 16,
+    color: '#333',
+    marginLeft: 10,
+    fontWeight: '500',
+  },
+  modalTime: {
+    fontSize: 16,
+    color: '#333',
+    marginLeft: 10,
+    fontWeight: '500',
+  },
+  modalSentimentBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    backgroundColor: '#F0F0F0',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginTop: 12,
+    marginBottom: 20,
+  },
+  sentimentBadgeDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginRight: 8,
+  },
+  sentimentBadgeText: {
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 1.5,
+    color: '#000',
+  },
+  memorySection: {
+    backgroundColor: '#F8F8F8',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 20,
+  },
+  memoryLabel: {
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 2,
+    color: '#666',
+    marginBottom: 8,
+  },
+  memoryText: {
+    fontSize: 15,
+    color: '#333',
+    lineHeight: 22,
+    fontStyle: 'italic',
+  },
+  playButton: {
+    borderRadius: 24,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  playGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+  },
+  playText: {
+    fontSize: 15,
+    fontWeight: '800',
+    letterSpacing: 2,
+    color: '#FFF',
+    marginLeft: 10,
   },
 });
