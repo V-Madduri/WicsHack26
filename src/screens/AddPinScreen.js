@@ -9,17 +9,22 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-  Animated
+  Animated,
+  Modal,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 export default function AddPinScreen() {
+  // Form State
   const [songName, setSongName] = useState('');
   const [artistName, setArtistName] = useState('');
   const [locationName, setLocationName] = useState('');
   const [memory, setMemory] = useState('');
   const [sentiment, setSentiment] = useState('');
+  
+  // Popup State
+  const [modalVisible, setModalVisible] = useState(false);
 
   // Breathing animation for the sparkle icon
   const sparkleAnim = useRef(new Animated.Value(1)).current;
@@ -40,9 +45,51 @@ export default function AddPinScreen() {
     { name: 'Nostalgic', color: '#9B86BD', icon: 'cloudy-night' },
   ];
 
+  const handleSave = () => {
+    // You can add validation here (e.g., if (!songName) return;)
+    setModalVisible(true);
+  };
+
+  const closeAndReset = () => {
+    setModalVisible(false);
+    // Clears the form after saving
+    setSongName('');
+    setArtistName('');
+    setLocationName('');
+    setMemory('');
+    setSentiment('');
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <LinearGradient colors={['#FCE4EC', '#E3F2FD']} style={styles.gradient}>
+        
+        {/* Success Popup Modal */}
+        <Modal
+          animationType="fade"
+          transparent={true}
+          visible={modalVisible}
+          onRequestClose={() => setModalVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <MaterialCommunityIcons name="heart-pulse" size={50} color="#F28482" />
+              
+              <Text style={styles.modalTitle}>
+                thanks for sharing your memory with us {"<3"}
+              </Text>
+              
+              <TouchableOpacity 
+                style={styles.modalButton} 
+                onPress={closeAndReset}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.modalButtonText}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.keyboardView}
@@ -147,7 +194,11 @@ export default function AddPinScreen() {
               </View>
 
               {/* Save Button */}
-              <TouchableOpacity style={styles.saveButton} activeOpacity={0.8}>
+              <TouchableOpacity 
+                style={styles.saveButton} 
+                activeOpacity={0.8}
+                onPress={handleSave}
+              >
                 <LinearGradient
                   colors={['#F28482', '#F59694']}
                   start={{ x: 0, y: 0 }}
@@ -214,5 +265,46 @@ const styles = StyleSheet.create({
   sentimentText: { fontSize: 14, color: '#555', fontWeight: '500' },
   saveButton: { borderRadius: 30, overflow: 'hidden', marginTop: 10 },
   saveGradient: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 20 },
-  saveText: { fontSize: 18, fontWeight: '700', color: '#FFF', marginRight: 10 }
+  saveText: { fontSize: 18, fontWeight: '700', color: '#FFF', marginRight: 10 },
+  
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    width: '80%',
+    backgroundColor: 'white',
+    borderRadius: 30,
+    padding: 35,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif',
+    color: '#3D3D3D',
+    marginTop: 15,
+    marginBottom: 25,
+    fontStyle: 'italic',
+    textAlign: 'center',
+    lineHeight: 28,
+  },
+  modalButton: {
+    backgroundColor: '#F28482',
+    paddingVertical: 12,
+    paddingHorizontal: 40,
+    borderRadius: 20,
+  },
+  modalButtonText: {
+    color: 'white',
+    fontWeight: '700',
+    fontSize: 16,
+  }
 });
