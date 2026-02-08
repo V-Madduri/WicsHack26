@@ -244,7 +244,7 @@ export default function FriendsMapScreen({ navigation }) {
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         <View style={styles.header}>
           <View>
-            <Text style={styles.networkText}>AURA NETWORK</Text>
+            <Text style={styles.networkText}>ATLAST</Text>
             <Text style={styles.socialText}>Social</Text>
           </View>
           <TouchableOpacity 

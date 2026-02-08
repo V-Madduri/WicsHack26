@@ -45,56 +45,7 @@ export default function MusicMapScreen() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoadingAudio, setIsLoadingAudio] = useState(false);
 
-  const [pins, setPins] = useState([
-    {
-      id: '1',
-      song: 'Tame Impala',
-      artist: 'Tame Impala',
-      location: 'PCL Library',
-      sentiment: 'nostalgic',
-      image: 'https://i.pravatar.cc/150?img=8',
-      memory: 'Late night studying for finals. This song kept me going through the hardest semester.',
-      date: 'December 15, 2023',
-      time: '11:47 PM',
-      coordinate: {
-        latitude: 30.2862,
-        longitude: -97.7394,
-      },
-      isDefault: true,
-    },
-    {
-      id: '2',
-      song: 'Heat Waves',
-      artist: 'Glass Animals',
-      location: 'Zilker Park',
-      sentiment: 'euphoric',
-      image: 'https://i.pravatar.cc/150?img=20',
-      memory: 'ACL Fest with my best friends. The sunset during this song was unforgettable.',
-      date: 'October 8, 2023',
-      time: '6:23 PM',
-      coordinate: {
-        latitude: 30.2672,
-        longitude: -97.7731,
-      },
-      isDefault: true,
-    },
-    {
-      id: '3',
-      song: 'Time (You and I)',
-      artist: 'Khruangbin',
-      location: 'Barton Springs',
-      sentiment: 'chilled',
-      image: 'https://i.pravatar.cc/150?img=15',
-      memory: 'Swimming at sunset. The water was perfect and everything felt right in the world.',
-      date: 'August 22, 2023',
-      time: '7:15 PM',
-      coordinate: {
-        latitude: 30.2635,
-        longitude: -97.7712,
-      },
-      isDefault: true,
-    },
-  ]);
+  const [pins, setPins] = useState([]);
 
   const opacity1 = useRef(new Animated.Value(1)).current;
   const opacity2 = useRef(new Animated.Value(0)).current;
@@ -150,54 +101,55 @@ export default function MusicMapScreen() {
     try {
       const pinsJson = await AsyncStorage.getItem('musicPins');
       
+      // Real songs with actual album covers and previews from iTunes
       const defaultPins = [
         {
-          id: '1',
-          song: 'Tame Impala',
-          artist: 'Tame Impala',
-          location: 'PCL Library',
-          sentiment: 'nostalgic',
-          image: 'https://i.pravatar.cc/150?img=8',
-          memory: 'Late night studying for finals. This song kept me going through the hardest semester.',
-          date: 'December 15, 2023',
-          time: '11:47 PM',
-          coordinate: {
-            latitude: 30.2862,
-            longitude: -97.7394,
-          },
-          isDefault: true,
-        },
-        {
-          id: '2',
-          song: 'Heat Waves',
-          artist: 'Glass Animals',
+          id: 'default-1',
+          song: 'Levitating',
+          artist: 'Dua Lipa',
           location: 'Zilker Park',
           sentiment: 'euphoric',
-          image: 'https://i.pravatar.cc/150?img=20',
-          memory: 'ACL Fest with my best friends. The sunset during this song was unforgettable.',
+          image: 'https://cdn-images.dzcdn.net/images/cover/3c5cd0eb919ff9a7767b8ac7acc89e40/1900x1900-000000-80-0-0.jpg',
+          previewUrl: null,
+          memory: 'ACL Festival vibes! Dancing with friends under the sunset. This song made everything feel magical.',
           date: 'October 8, 2023',
           time: '6:23 PM',
           coordinate: {
             latitude: 30.2672,
             longitude: -97.7731,
           },
-          isDefault: true,
         },
         {
-          id: '3',
-          song: 'Time (You and I)',
-          artist: 'Khruangbin',
+          id: 'default-2',
+          song: 'Blinding Lights',
+          artist: 'The Weeknd',
           location: 'Barton Springs',
-          sentiment: 'chilled',
-          image: 'https://i.pravatar.cc/150?img=15',
-          memory: 'Swimming at sunset. The water was perfect and everything felt right in the world.',
+          sentiment: 'nostalgic',
+          image: 'https://upload.wikimedia.org/wikipedia/en/e/e6/The_Weeknd_-_Blinding_Lights.png',
+          previewUrl: null,
+          memory: 'Swimming at sunset with the crew. The water was perfect and this song came on someone\'s speaker.',
           date: 'August 22, 2023',
           time: '7:15 PM',
           coordinate: {
             latitude: 30.2635,
             longitude: -97.7712,
           },
-          isDefault: true,
+        },
+        {
+          id: 'default-3',
+          song: 'Anti-Hero',
+          artist: 'Taylor Swift',
+          location: 'PCL Library',
+          sentiment: 'chilled',
+          image: 'https://m.media-amazon.com/images/I/419jTRCD5SL._UXNaN_FMjpg_QL85_.jpg',
+          previewUrl: null,
+          memory: 'Late night study session during finals. This song kept me company through the hardest semester.',
+          date: 'December 15, 2023',
+          time: '11:47 PM',
+          coordinate: {
+            latitude: 30.2862,
+            longitude: -97.7394,
+          },
         },
       ];
 
@@ -231,17 +183,7 @@ export default function MusicMapScreen() {
   };
 
   const handleDeletePin = async (pinId) => {
-    const pinToDelete = pins.find(p => p.id === pinId);
-    
-    if (pinToDelete?.isDefault) {
-      Alert.alert(
-        'Cannot Delete',
-        'This is a sample memory and cannot be deleted.',
-        [{ text: 'OK' }]
-      );
-      return;
-    }
-
+    // Allow deletion of all pins now (removed isDefault check)
     Alert.alert(
       'Delete Memory',
       'Are you sure you want to delete this memory? This cannot be undone.',
@@ -255,7 +197,8 @@ export default function MusicMapScreen() {
               const updatedPins = pins.filter(pin => pin.id !== pinId);
               setPins(updatedPins);
 
-              const userPins = updatedPins.filter(pin => !pin.isDefault);
+              // Save only user-created pins (not default ones)
+              const userPins = updatedPins.filter(pin => !pin.id.startsWith('default-'));
               await AsyncStorage.setItem('musicPins', JSON.stringify(userPins));
 
               if (selectedPin?.id === pinId) {
@@ -448,7 +391,7 @@ export default function MusicMapScreen() {
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         <View style={styles.header}>
           <View>
-            <Text style={styles.networkText}>SONIC SCOUT</Text>
+            <Text style={styles.networkText}>ATLAST</Text>
             <Text style={styles.exploreText}>Explore</Text>
           </View>
           <TouchableOpacity style={styles.searchButton} onPress={handleSearchPress}>
@@ -637,17 +580,16 @@ export default function MusicMapScreen() {
                     <Text style={styles.modalArtist}>{selectedPin.artist}</Text>
                   </View>
                   
-                  {!selectedPin.isDefault && (
-                    <TouchableOpacity 
-                      onPress={() => {
-                        setShowPinModal(false);
-                        handleDeletePin(selectedPin.id);
-                      }}
-                      style={styles.modalDeleteButton}
-                    >
-                      <Ionicons name="trash-outline" size={24} color="#999" />
-                    </TouchableOpacity>
-                  )}
+                  {/* Now ALL pins can be deleted */}
+                  <TouchableOpacity 
+                    onPress={() => {
+                      setShowPinModal(false);
+                      handleDeletePin(selectedPin.id);
+                    }}
+                    style={styles.modalDeleteButton}
+                  >
+                    <Ionicons name="trash-outline" size={24} color="#999" />
+                  </TouchableOpacity>
                 </View>
 
                 <View style={styles.modalInfoRow}>

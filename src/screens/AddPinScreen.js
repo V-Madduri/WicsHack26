@@ -18,8 +18,14 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { searchTrack } from '../services/musicService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFonts, PlayfairDisplay_400Regular_Italic } from '@expo-google-fonts/playfair-display';
 
 export default function AddPinScreen() {
+  const [fontsLoaded] = useFonts({
+    PlayfairDisplay_400Regular_Italic,
+  });
+
   const [songName, setSongName] = useState('');
   const [artistName, setArtistName] = useState('');
   const [locationName, setLocationName] = useState('');
@@ -39,6 +45,15 @@ export default function AddPinScreen() {
   const [modalVisible, setModalVisible] = useState(false);
 
   const sparkleAnim = useRef(new Animated.Value(1)).current;
+
+  // TEMPORARY: Clear storage on mount for testing
+  useEffect(() => {
+    const clearStorage = async () => {
+      await AsyncStorage.removeItem('musicPins');
+      console.log('🧹 Cleared all pins for fresh testing');
+    };
+    clearStorage();
+  }, []);
 
   useEffect(() => {
     Animated.loop(
@@ -62,14 +77,19 @@ export default function AddPinScreen() {
         setSearchingMusic(true);
         setMusicFound(false);
         
+        console.log('🎵 Starting music search...');
         const result = await searchTrack(songName.trim(), artistName.trim());
         
         if (result) {
+          console.log('💾 Setting state with result:');
+          console.log('   Album Cover:', result.albumCover);
+          console.log('   Preview URL:', result.previewUrl);
+          
           setAlbumCover(result.albumCover);
           setPreviewUrl(result.previewUrl);
           setMusicFound(true);
-          console.log('🎨 Album cover set:', result.albumCover);
         } else {
+          console.log('❌ No result returned from search');
           setAlbumCover(null);
           setPreviewUrl(null);
           setMusicFound(false);
@@ -226,11 +246,10 @@ export default function AddPinScreen() {
     }
 
     try {
-      const AsyncStorage = require('@react-native-async-storage/async-storage').default;
-      
-      console.log('💾 Saving pin...');
-      console.log('  Album Cover:', albumCover);
-      console.log('  Preview URL:', previewUrl);
+      console.log('');
+      console.log('💾 ========== SAVING PIN ==========');
+      console.log('   Album Cover:', albumCover);
+      console.log('   Preview URL:', previewUrl);
       
       const newPin = {
         id: Date.now().toString(),
@@ -246,16 +265,19 @@ export default function AddPinScreen() {
         coordinate: locationCoordinates,
       };
 
-      console.log('📌 NEW PIN:');
-      console.log('  Song:', newPin.song);
-      console.log('  Artist:', newPin.artist);
-      console.log('  Image:', newPin.image);
-      console.log('  Preview:', newPin.previewUrl);
+      console.log('📌 NEW PIN OBJECT:');
+      console.log('   Song:', newPin.song);
+      console.log('   Artist:', newPin.artist);
+      console.log('   Image:', newPin.image);
+      console.log('   Preview:', newPin.previewUrl);
 
       const existingPins = JSON.parse(await AsyncStorage.getItem('musicPins') || '[]');
       await AsyncStorage.setItem('musicPins', JSON.stringify([newPin, ...existingPins]));
       
-      console.log('✅ Pin saved successfully!');
+      console.log('✅ Pin saved to AsyncStorage!');
+      console.log('=====================================');
+      console.log('');
+      
       setModalVisible(true);
     } catch (error) {
       console.error('❌ Save error:', error);
@@ -276,10 +298,23 @@ export default function AddPinScreen() {
     setMusicFound(false);
   };
 
+  if (!fontsLoaded) {
+    return null;
+  }
+
   return (
-    <SafeAreaView style={styles.container}>
-      <LinearGradient colors={['#FCE4EC', '#E3F2FD']} style={styles.gradient}>
-        
+    <View style={styles.fullScreen}>
+      {/* Animated Gradient Background - Same as Social Screen */}
+      <View style={StyleSheet.absoluteFillObject}>
+        <LinearGradient 
+          colors={['#E8F4FF', '#FFEEF7', '#FFF9E8']} 
+          style={StyleSheet.absoluteFillObject} 
+          start={{ x: 0, y: 0 }} 
+          end={{ x: 0, y: 1 }} 
+        />
+      </View>
+
+      <SafeAreaView style={styles.container}>
         <Modal visible={modalVisible} animationType="fade" transparent={true}>
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
@@ -296,7 +331,7 @@ export default function AddPinScreen() {
           <View style={styles.header}>
             <View style={styles.headerTitleRow}>
               <View>
-                <Text style={styles.networkText}>SONIC SCOUT</Text>
+                <Text style={styles.networkText}>ATLAST</Text>
                 <Text style={styles.socialText}>Pin</Text>
               </View>
               <Animated.View style={{ transform: [{ scale: sparkleAnim }] }}>
@@ -347,13 +382,24 @@ export default function AddPinScreen() {
                     <Image 
                       source={{ uri: albumCover }} 
                       style={styles.albumCoverImage}
-                      onError={() => console.log('❌ Preview image failed')}
-                      onLoad={() => console.log('✅ Preview image loaded')}
+                      onError={(e) => {
+                        console.log('❌ Preview image failed to load');
+                        console.log('   URL:', albumCover);
+                        console.log('   Error:', e.nativeEvent.error);
+                      }}
+                      onLoad={() => {
+                        console.log('✅ Preview image loaded successfully');
+                        console.log('   URL:', albumCover);
+                      }}
                     />
                     <View style={styles.albumCoverInfo}>
                       <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
                       <Text style={styles.albumCoverText}>Found on iTunes!</Text>
-                      {previewUrl && <Text style={styles.previewAvailable}>• Preview ready</Text>}
+                      {previewUrl ? (
+                        <Text style={styles.previewAvailable}>• Preview ready</Text>
+                      ) : (
+                        <Text style={styles.previewNotAvailable}>• No preview</Text>
+                      )}
                     </View>
                   </View>
                 )}
@@ -444,23 +490,28 @@ export default function AddPinScreen() {
             </View>
           </ScrollView>
         </KeyboardAvoidingView>
-      </LinearGradient>
-    </SafeAreaView>
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FCE4EC' },
-  gradient: { flex: 1 },
+  fullScreen: { flex: 1 },
+  container: { flex: 1 },
   keyboardView: { flex: 1 },
   header: { paddingHorizontal: 30, paddingTop: 30, paddingBottom: 20 },
   headerTitleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
-  networkText: { fontSize: 10, fontWeight: '800', letterSpacing: 4, color: '#A08189' },
-  socialText: { fontSize: 68, fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif', color: '#3D3D3D', marginTop: -10, fontStyle: 'italic' },
+  networkText: { fontSize: 10, fontWeight: '800', letterSpacing: 4, color: '#000' },
+  socialText: { 
+    fontSize: 52, 
+    fontFamily: 'PlayfairDisplay_400Regular_Italic', 
+    color: '#000', 
+    marginTop: -10 
+  },
   scrollContent: { paddingBottom: 80 },
   section: { paddingHorizontal: 30 },
   sectionTitle: { fontSize: 11, fontWeight: '700', letterSpacing: 2, color: '#757575', marginBottom: 25, textAlign: 'center' },
-  inputCard: { backgroundColor: '#FFF', borderRadius: 22, paddingVertical: 18, paddingHorizontal: 22, marginBottom: 18, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 3 },
+  inputCard: { backgroundColor: 'rgba(255, 255, 255, 0.85)', borderRadius: 22, paddingVertical: 18, paddingHorizontal: 22, marginBottom: 18, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 3 },
   label: { fontSize: 10, fontWeight: '900', letterSpacing: 1.5, color: '#C97A8E', marginBottom: 6 },
   input: { fontSize: 16, color: '#2D2D2D', fontWeight: '500' },
   textArea: { height: 90, textAlignVertical: 'top' },
@@ -470,7 +521,8 @@ const styles = StyleSheet.create({
   albumCoverImage: { width: 70, height: 70, borderRadius: 8, marginRight: 12 },
   albumCoverInfo: { flex: 1, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' },
   albumCoverText: { fontSize: 12, color: '#4CAF50', fontWeight: '600', marginLeft: 6 },
-  previewAvailable: { fontSize: 11, color: '#999', marginLeft: 6 },
+  previewAvailable: { fontSize: 11, color: '#4CAF50', marginLeft: 6 },
+  previewNotAvailable: { fontSize: 11, color: '#FF6B6B', marginLeft: 6 },
   locationHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
   currentLocationButton: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 4, backgroundColor: '#FCE4EC', borderRadius: 12 },
   currentLocationText: { fontSize: 11, fontWeight: '700', color: '#F28482', marginLeft: 4 },
@@ -483,7 +535,12 @@ const styles = StyleSheet.create({
   locationConfirmed: { flexDirection: 'row', alignItems: 'center', marginTop: 8 },
   locationConfirmedText: { fontSize: 12, color: '#4CAF50', marginLeft: 6, fontWeight: '600' },
   sentimentContainer: { marginTop: 15, marginBottom: 30 },
-  sentimentLabel: { fontSize: 20, fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif', color: '#525252', marginBottom: 15, fontStyle: 'italic' },
+  sentimentLabel: { 
+    fontSize: 20, 
+    fontFamily: 'PlayfairDisplay_400Regular_Italic', 
+    color: '#525252', 
+    marginBottom: 15 
+  },
   sentimentGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   sentimentButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.7)', borderRadius: 18, paddingVertical: 12, paddingHorizontal: 16, borderWidth: 1, borderColor: '#EAEAEA' },
   sentimentText: { fontSize: 14, color: '#555', fontWeight: '500' },
@@ -492,7 +549,15 @@ const styles = StyleSheet.create({
   saveText: { fontSize: 18, fontWeight: '700', color: '#FFF', marginRight: 10 },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'center', alignItems: 'center' },
   modalContent: { width: '80%', backgroundColor: 'white', borderRadius: 30, padding: 35, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.15, shadowRadius: 20, elevation: 10 },
-  modalTitle: { fontSize: 22, fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif', color: '#3D3D3D', marginTop: 15, marginBottom: 25, fontStyle: 'italic', textAlign: 'center', lineHeight: 28 },
+  modalTitle: { 
+    fontSize: 22, 
+    fontFamily: 'PlayfairDisplay_400Regular_Italic', 
+    color: '#3D3D3D', 
+    marginTop: 15, 
+    marginBottom: 25, 
+    textAlign: 'center', 
+    lineHeight: 28 
+  },
   modalButton: { backgroundColor: '#F28482', paddingVertical: 12, paddingHorizontal: 40, borderRadius: 20 },
   modalButtonText: { color: 'white', fontWeight: '700', fontSize: 16 },
 });

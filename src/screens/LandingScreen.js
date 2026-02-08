@@ -59,7 +59,7 @@ export default function LandingScreen({ navigation }) {
         <LinearGradient colors={['#FCE4EC', '#F28482']} style={styles.gradient}>
           <View style={styles.centerContent}>
             <MaterialCommunityIcons name="pulse" size={80} color="#FFF" />
-            <Text style={styles.networkText}>SONIC SCOUT</Text>
+            <Text style={styles.networkText}>ATLAST</Text>
             <Text style={styles.tagline}>your world, synchronized.</Text>
           </View>
 

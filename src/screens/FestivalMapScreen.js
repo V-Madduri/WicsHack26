@@ -12,8 +12,13 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { useFonts, PlayfairDisplay_400Regular_Italic } from '@expo-google-fonts/playfair-display';
 
 export default function FestivalExploreScreen() {
+  const [fontsLoaded] = useFonts({
+    PlayfairDisplay_400Regular_Italic,
+  });
+
   const pulseAnim = useRef(new Animated.Value(1)).current;
   
   // State for Modal
@@ -38,7 +43,7 @@ export default function FestivalExploreScreen() {
       location: 'Brooklyn Mirage',
       tag: 'HOTTEST',
       color: '#F28482',
-      description: 'A 3-day immersive experience featuring the world’s leading melodic techno artists under the stars of Brooklyn.',
+      description: 'A 3-day immersive experience featuring the  leading melodic techno artists under the stars of Austin.',
       price: '$149.00'
     },
     {
@@ -69,10 +74,23 @@ export default function FestivalExploreScreen() {
     setModalVisible(true);
   };
 
+  if (!fontsLoaded) {
+    return null;
+  }
+
   return (
-    <SafeAreaView style={styles.container}>
-      <LinearGradient colors={['#FCE4EC', '#E3F2FD']} style={styles.gradient}>
-        
+    <View style={styles.fullScreen}>
+      {/* Animated Gradient Background - Same as Social Screen */}
+      <View style={StyleSheet.absoluteFillObject}>
+        <LinearGradient 
+          colors={['#E8F4FF', '#FFEEF7', '#FFF9E8']} 
+          style={StyleSheet.absoluteFillObject} 
+          start={{ x: 0, y: 0 }} 
+          end={{ x: 0, y: 1 }} 
+        />
+      </View>
+
+      <SafeAreaView style={styles.container}>
         {/* Dynamic Popup Modal */}
         <Modal
           animationType="slide"
@@ -126,7 +144,7 @@ export default function FestivalExploreScreen() {
         <View style={styles.header}>
           <View style={styles.headerTitleRow}>
             <View>
-              <Text style={styles.networkText}>DISCOVER</Text>
+              <Text style={styles.networkText}>ATLAST</Text>
               <Text style={styles.socialText}>Festivals</Text>
             </View>
             <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
@@ -190,28 +208,27 @@ export default function FestivalExploreScreen() {
             ))}
           </View>
         </ScrollView>
-      </LinearGradient>
-    </SafeAreaView>
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FCE4EC' },
-  gradient: { flex: 1 },
+  fullScreen: { flex: 1 },
+  container: { flex: 1 },
   header: { paddingHorizontal: 30, paddingTop: 30, paddingBottom: 15 },
   headerTitleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
-  networkText: { fontSize: 10, fontWeight: '800', letterSpacing: 4, color: '#A08189' },
+  networkText: { fontSize: 10, fontWeight: '800', letterSpacing: 4, color: '#000' },
   socialText: {
-    fontSize: 62,
-    fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif',
-    color: '#3D3D3D',
+    fontSize: 52,
+    fontFamily: 'PlayfairDisplay_400Regular_Italic',
+    color: '#000',
     marginTop: -10,
-    fontStyle: 'italic'
   },
   scrollContent: { paddingBottom: 100 },
   section: { paddingHorizontal: 25 },
   festCard: {
-    backgroundColor: '#FFF',
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
     borderRadius: 30,
     marginBottom: 25,
     overflow: 'hidden',
@@ -244,8 +261,7 @@ const styles = StyleSheet.create({
   festTitle: {
     color: '#FFF',
     fontSize: 32,
-    fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif',
-    fontStyle: 'italic',
+    fontFamily: 'PlayfairDisplay_400Regular_Italic',
     marginBottom: 10,
   },
   infoRow: { flexDirection: 'row', gap: 15 },
@@ -264,7 +280,7 @@ const styles = StyleSheet.create({
   ticketsBtn: { flex: 1, alignItems: 'center' },
   ticketsBtnText: { fontSize: 12, fontWeight: '800', letterSpacing: 1.5 },
 
-  // New Modal Styles
+  // Modal Styles
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
@@ -289,8 +305,7 @@ const styles = StyleSheet.create({
   },
   festHeaderName: {
     fontSize: 28,
-    fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif',
-    fontStyle: 'italic',
+    fontFamily: 'PlayfairDisplay_400Regular_Italic',
     color: '#333',
     textAlign: 'center',
     marginBottom: 15,
